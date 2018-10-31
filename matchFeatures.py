@@ -2,9 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-def matchBruteForce(filename1: str, filename2: str, numMatches: int, showMatches: bool):
-    img1 = cv2.imread(filename1, 0)
-    img2 = cv2.imread(filename2, 0)
+def matchBruteForce(img1, img2, numMatches: int, showMatches: bool = False):
     orb = cv2.ORB_create()
     kp1, des1 = orb.detectAndCompute(img1, None)
     kp2, des2 = orb.detectAndCompute(img2, None)
@@ -39,17 +37,16 @@ def matchBruteForce(filename1: str, filename2: str, numMatches: int, showMatches
 
 
     # Draw first 10 matches.
+
+    img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:numMatches], None, flags=2)
     if showMatches:
-        img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:numMatches], None, flags=2)
         plt.imshow(img3), plt.show()
 
     points1 = np.array(list_kp1).transpose()
     points2 = np.array(list_kp2).transpose()
-    return points1, points2
+    return points1, points2, img3
 
-def matchKnn(filename1: str, filename2: str, numMatches: int, showMatches: bool):
-    img1 = cv2.imread(filename1, 0)
-    img2 = cv2.imread(filename2, 0)
+def matchKnn(img1, img2, numMatches: int, showMatches: bool = False):
     brisk = cv2.BRISK_create()
     kp1, des1 = brisk.detectAndCompute(img1, None)
     kp2, des2 = brisk.detectAndCompute(img2, None)
@@ -85,10 +82,10 @@ def matchKnn(filename1: str, filename2: str, numMatches: int, showMatches: bool)
         list_kp2.append([x2, y2])
 
     # Draw first 10 matches.
+    img3 = cv2.drawMatchesKnn(img1, kp1, img2, kp2, good[:numMatches], None, flags=2)
     if showMatches:
-        img3 = cv2.drawMatchesKnn(img1, kp1, img2, kp2, good[:numMatches], None, flags=2)
         plt.imshow(img3), plt.show()
 
     points1 = np.array(list_kp1).transpose()
     points2 = np.array(list_kp2).transpose()
-    return points1, points2
+    return points1, points2, img3

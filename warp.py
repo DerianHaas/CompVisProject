@@ -1,5 +1,5 @@
-import numpy as np
 from math import *
+from compute import *
 
 def warpImage(inputIm: np.ndarray, refIm: np.ndarray, H: np.ndarray):
 
@@ -15,7 +15,7 @@ def warpImage(inputIm: np.ndarray, refIm: np.ndarray, H: np.ndarray):
     maxCols = int(ceil(max(bounds[:,0])))
     maxRows = int(ceil(max(bounds[:,1])))
 
-    warpImg = np.zeros((maxRows - minRows, maxCols - minCols, 3), dtype='uint8')
+    warpImg = np.zeros((maxRows - minRows, maxCols - minCols), dtype='float')
     invH = np.linalg.inv(H)
     for r in range(0, maxRows - minRows):
         for c in range(0, maxCols - minCols):
@@ -30,13 +30,13 @@ def warpImage(inputIm: np.ndarray, refIm: np.ndarray, H: np.ndarray):
     mergeMinRows = min([minRows, 0])
     mergeMaxRows = max([maxRows, refIm.shape[0]])
 
-    mergeIm = np.zeros((mergeMaxRows - mergeMinRows, mergeMaxCols - mergeMinCols, 3), dtype='uint8')
+    mergeIm = np.zeros((mergeMaxRows - mergeMinRows, mergeMaxCols - mergeMinCols), dtype='float')
 
     mergeIm[minRows-mergeMinRows:maxRows-mergeMinRows, minCols-mergeMinCols:maxCols-mergeMinCols] = warpImg[:,:]
 
     for r in range(0, refIm.shape[0]):
         for c in range(0, refIm.shape[1]):
-            mergeIm[r - mergeMinRows, c - mergeMinCols] = (mergeIm[r - mergeMinRows, c - mergeMinCols] * .5 + refIm[r,c] * .25) / .75 if np.sum(mergeIm[r - mergeMinRows, c - mergeMinCols]) else refIm[r,c]
+            mergeIm[r - mergeMinRows, c - mergeMinCols] = refIm[r,c]
 
     return warpImg, mergeIm
 
@@ -53,7 +53,7 @@ def frameImage(image, frameIm, H):
     maxCols = int(ceil(max(bounds[:, 0])))
     maxRows = int(ceil(max(bounds[:, 1])))
 
-    warpImg = np.zeros((maxRows - minRows, maxCols - minCols, 3), dtype='uint8')
+    warpImg = np.zeros((maxRows - minRows, maxCols - minCols, 3), dtype='float')
     invH = np.linalg.inv(H)
     for r in range(0, maxRows - minRows):
         for c in range(0, maxCols - minCols):
@@ -68,7 +68,7 @@ def frameImage(image, frameIm, H):
     mergeMinRows = min([minRows, 0])
     mergeMaxRows = max([maxRows, frameIm.shape[0]])
 
-    mergeIm = np.zeros((mergeMaxRows - mergeMinRows, mergeMaxCols - mergeMinCols, 3), dtype='uint8')
+    mergeIm = np.zeros((mergeMaxRows - mergeMinRows, mergeMaxCols - mergeMinCols, 3), dtype='float')
 
     mergeIm[-1*mergeMinRows:frameIm.shape[0]-mergeMinRows, -1*mergeMinCols:frameIm.shape[1]-mergeMinCols] = frameIm[:,:]
     mergeIm[minRows - mergeMinRows:maxRows - mergeMinRows, minCols - mergeMinCols:maxCols - mergeMinCols] = warpImg[:,
@@ -76,25 +76,3 @@ def frameImage(image, frameIm, H):
 
     return mergeIm
 
-def computeH(t1: np.ndarray, t2: np.ndarray) -> np.ndarray:
-    numPoints = t1.shape[1]
-    ones = np.ones((1, numPoints))
-    homo1 = np.append(t1, ones, axis=0).transpose()
-
-    L = np.zeros((2 * numPoints, 9))
-    for i in range(0,numPoints):
-        L[2 * i, 0:3] = homo1[i]
-        L[2 * i, 6:9] = -1 * t2[0, i] * homo1[i]
-
-        L[2 * i + 1, 3:6] = homo1[i]
-        L[2 * i + 1, 6:9] = -1 * t2[1, i] * homo1[i]
-
-    h = np.linalg.svd(L)[2][-1,:].reshape((3,3))
-    return h
-
-
-def convert(x, y, H):
-    point = np.array([x,y,1]).transpose()
-    newPoint = H.dot(point)
-    newPoint[:2] /= newPoint[2]
-    return [newPoint[0], newPoint[1]]
