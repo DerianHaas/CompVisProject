@@ -37,78 +37,174 @@
         <!-- Goal -->
         <h3>Abstract</h3>
         <p>
-          One or two sentences on the motivation behind the problem you are solving. One or two
-          sentences describing the approach you took. One or two sentences on the main result you
-          obtained.
+          We are doing a comparative study on different feature selection algorithms on images from
+          different angles and using their respective homography matrix, warped points, and panorama
+          to demonstrate their effects. The idea is to use the selected features, match them between
+          images, and create a warped, overlaid merging of the images. With manually computed
+          homographies provided in the datasets as our ground truth, we want to do a qualitative
+          comparison between different feature selection algorithms on how successful they are at
+          imitating the ground truth stitching. After experimentation, we have found that no
+          specific feature selection algorithm provides superior results in a majority of instances.
         </p>
 
         <!-- figure -->
         <h3>Teaser figure</h3>
-        <p>
-          A figure that conveys the main idea behind the project or the main application being addressed.
-        </p>
 
         <!-- TODO(roy): Main teaser figure will go here. Find teaser image -->
-        <div style="text-align: center;">
-          <img style="height: 200px;" alt="" src="mainfig.png">
+        <div style="text-align: center; padding-top: 10px;">
+          <img style="height: 400px;" alt="" src="images/teaser.png">
         </div>
 
         <!-- Introduction -->
         <h3>Introduction</h3>
         <p>
-          Motivation behind the problem you are solving, what applications it has, any brief
-          background on the particular domain you are working in (if not regular RBG photographs),
-          etc. If you are using a new way to solve an existing problem, briefly mention and describe
-          the existing approaches and tell us how your approach is new.
+          The inspiration for this project was a combination of assignment PS1 (creating an image
+          stitcher using image warping and homographies to automatically create an image mosaic) and
+          modern photography techniques on panoramic images. These two ideas led us to wondering
+          about the variety of computer vision techniques involved with all aspects of modern day
+          photography and how they actually function. As such, we have decided to try to recreate
+          existing panoramic photo stitchers and analyze how automatic feature selection and
+          matching has an effect on its angle warping and pixel stitching in comparison to the
+          provided datasets which we consider ground truth aka difference between images using a
+          calculated homography matrix and a provided homography matrix we know is exactly correct.
+          While this approach may not be new, we hope to learn which feature algorithms may be most
+          optimal in reproducing results similar to existing real world applications.
         </p>
 
         <!-- Approach -->
         <h3>Approach</h3>
         <p>
-          Describe very clearly and systematically your approach to solve the problem. Tell us exactly
-          what existing implementations you used to build your system. Tell us what obstacles you
-          faced and how you addressed them. Justify any design choices or judgment calls you made
-          in your approach.
+          The feature selection algorithms we analyzed are Brute Force and K-Nearest Neighbors.
+          Using a dataset containing a panoramic image broken up into overlapping segments, we
+          converted each image to grayscale and ran each feature matching algorithm (through the
+          OpenCV Python library) on each pair of overlapping images. For each algorithm, we chose
+          10 matches between each pair of images and computed the homography matrices between them.
+          Using the homography matrix, we then warped and merged them together. For each result, we
+          compared the calculated error between the algorithms’ result and the ground truth using
+          the structural similarity index (SSIM). The SSIM computes a float between -1 and 1 from
+          two images, where the closer the index is to 1, the more similar the images are. The SSIM
+          allows us to find a quantitative comparison between feature matching algorithms. An obstacle
+          we faced was that there are no ground truth homography matrices for stitching more than two
+          images together. Because of this, we decided to stitch images into pairs only and compute
+          SSIM individually.
         </p>
 
         <!-- Results -->
         <h3>Experiments and results</h3>
         <p>
-            Provide details about the experimental set up (number of images/videos, number of
-            datasets you experimented with, train/test split if you used machine learning algorithms,
-            etc.).
-
-            Describe the evaluation metrics you used to evaluate how well your approach is
-            working. Include clear figures and tables, as well as illustrative qualitative examples
-            if appropriate. Be sure to include obvious baselines to see if your approach is doing
-            better than a naive approach (e.g. for classification accuracy, how well would a
-            classifier do that made random decisions?).
-
-            Also discuss any parameters of your algorithms, and tell us how you set the values of
-            those parameters. You can also show us how the performance varies as you change those
-            parameter values. Be sure to discuss any trends you see in your results, and explain why
-            these trends make sense.
-
-            Are the results as expected? Why?
+          For the dataset, we used Adobe's Panorama Dataset. It consists of 10 panorama image sets,
+          together with precomputed local features for each image, and ground truth homographies
+          for each overlapping image pair. We applied brute-force feature and k-means matching to
+          find matching points, and computed homography matrices between the images. Using the
+          generated homographies, we stitched the images together using our code from PS1.  Using the
+          Structural Similarity Index, we calculated how different each algorithms’ produced results
+          was from the ground truth. For each algorithm, we decided to use only 10 pairs of points
+          between two images to compute the homography matrix. We needed at least 4 pairs of points
+          to compute the homography matrix and the more points used in computation, the greater the
+          impact of potential outliers on the accuracy of the homography matrix. We will experiment
+          with different numbers of points moving forward, to see how they affect the results. For
+          k-means matching, we set the k-value to 2 which will draw two match-lines for each keypoint.
+          Using k = 2 allow us to use the ratio test to extract the best pairs, as described
+          <a href="https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf">here</a>. We will also need to
+          analyze in the future how the performance of both feature matching algorithms change as we
+          vary the initial parameter values. Our results have been mixed and varied, leading us to
+          believe that neither feature matching algorithm always produces more accurate panoramic
+          images. As such, future work may include additional feature matching algorithms and additional
+          tweaks to algorithm parameters in hopes of more conclusive results.
         </p>
-
-        <!-- TODO(roy): Main results figure will go here. Find  image -->
-        <div style="text-align: center;">
-          <img style="height: 300px;" alt="" src="results.png">
-        </div>
 
         <!-- Results -->
         <h3>Qualitative results</h3>
-        <p>
-          Show several visual examples of inputs/outputs of your system (success cases and failures)
-          that help us better understand your approach.
-        </p>
-
-        <!-- TODO(roy): Additional figures that help explain results and show our approach will go here.  -->
+        <h5>
+          Example feature matching on golden gate bridge:
+        </h5>
+        <p>Input images to merge:</p>
         <div style="text-align: center;">
-          <img style="height: 300px;" alt="" src="qual_results.png">
+            <img style="height: 400px;" alt="" src="data/goldengate/goldengate-01.png">
+            <img style="height: 400px;" alt="" src="data/goldengate/goldengate-00.png">
         </div>
 
+        <p>Feature matching (10 pairs of points), brute force on left, knn on right</p>
+        <div style="text-align: center;">
+            <img style="height: 300px;" alt="" src="images/GGbrute1to0Matches.png">
+            <img style="height: 300px;" alt="" src="images/GGknn1to0Matches.png">
+        </div>
+
+        <p>Merged images using homography matrix included in dataset (ground truth):</p>
+        <div style="text-align: center;">
+          <img style="height: 400px;" alt="" src="images/GGmanual1to0Merge.png">
+        </div>
+
+        <p>
+          Merged images using homography computed from feature matching (left: brute force, right: knn)
+        </p>
+        <div style="text-align: center;">
+            <img style="height: 400px;" alt="" src="images/GGbrute1to0Merge.png">
+            <img style="height: 400px;" alt="" src="images/GGknn1to0Merge.png">
+        </div>
+        <br/>
+        <p>Computed similarity between calculated merges and ground truth using SSIM: <br/><br/>
+            Brute force vs Ground truth: 0.8873626380952582 <br />
+            Knn vs Ground truth: 0.7725209975282192
+        </p>
+
+        <h5>
+            Example feature matching on office:
+          </h5>
+          <p>Input images to merge:</p>
+          <div style="text-align: center;">
+              <img style="height: 400px;" alt="" src="data/office/office-01.png">
+              <img style="height: 400px;" alt="" src="data/office/office-00.png">
+          </div>
+
+          <p>Feature matching (10 pairs of points), brute force on left, knn on right</p>
+          <div style="text-align: center;">
+              <img style="height: 300px;" alt="" src="images/officebrute1to0Matches.png">
+              <img style="height: 300px;" alt="" src="images/officeknn1to0Matches.png">
+          </div>
+
+          <p>Merged images using homography matrix included in dataset (ground truth):</p>
+          <div style="text-align: center;">
+            <img style="height: 400px;" alt="" src="images/officemanual1to0Merge.png">
+          </div>
+
+          <p>
+            Merged images using homography computed from feature matching (left: brute force, right: knn)
+          </p>
+          <div style="text-align: center;">
+              <img style="height: 400px;" alt="" src="images/officebrute1to0Merge.png">
+              <img style="height: 400px;" alt="" src="images/officeknn1to0Merge.png">
+          </div>
+          <br/>
+          <p>Computed similarity between calculated merges and ground truth using SSIM: <br/><br/>
+              Brute force vs Ground truth: 0.9462665043983813 <br />
+              Knn vs Ground truth: 0.962649793084795
+          </p>
+
+        <h3>Conclusion and Future Work</h3>
+        <p>
+          In our project proposal, we planned to measure how changing the order of image stitching
+          affects the quality of the panorama produced. However, since we do not have ground truth
+          homography matrices for stitching more than two images together, we cannot test different
+          orderings.  Instead, we are computing similarity between pairs of images stitched together
+          using different feature matching algorithms. Our future work includes experimenting with
+          the number of pairs of points to use to compute the homography matrix. We will also need
+          to analyze how the performance of both feature matching algorithms change as we vary the
+          initial parameter values. Finally, we plan to add more feature matching algorithms for
+          qualitative comparison.
+        </p>
+
+        <h3>References</h3>
+        <ul>
+          <li>
+            Feature Matching. Retrieved October 31, 2018, from
+            https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_matcher/py_matcher.html
+          </li>
+          <li>
+            Lowe, D. G. (2004). Distinctive Image Features from Scale-Invariant Keypoints.
+            International Journal of Computer Vision, 60(2), 91-110. doi:10.1023/b:visi.0000029664.99615.94
+          </li>
+        </ul>
         <hr />
         <footer>
           <p>© Haas, Hong, Lieu</p>
