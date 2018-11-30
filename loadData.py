@@ -3,9 +3,11 @@ from warp import *
 from matchFeatures import *
 import os
 import cv2
+from compute import *
 
 detectAlgs = {'ORB': detectORB, 'BRISK': detectBRISK, 'AKAZE': detectAKAZE}
 matchAlgs = {'brute': matchBruteForce, 'bruteKnn': matchBFKnn, 'flann': matchFlannKnn}
+errorAlgs = {'BF' : computeBFerror, 'SSIM' : computeSSIMerror, 'HIST' : computeHISTerror, 'RMSE' : computeRMSEerror}
 
 
 def load(folderName: str, numPics: int, numMatches: int):
@@ -52,14 +54,18 @@ def load(folderName: str, numPics: int, numMatches: int):
             f.write("Detection Algorithm: " + detect + "\n")
             for match in matchAlgs:
                 print("Matching images "+str(num2)+" to "+str(num)+" in dataset "+folderName+" with "+detect+" detection and "+match+" matching")
+                f.write("\tMatching Algorithm: " + match + "\n")
                 points1, points2, matchIm = matchAlgs[match](images[i + 1], images[i], keyPoints, descriptors, numMatches)
                 _, mergeIm = warpImage(images[i + 1], images[i], computeH(points1, points2))
                 if type(mergeIm) != str:
                     img.imsave("out/" + folderName +  "/" + detect + "/" + match + "/" + num2 + "to" + num + "Merge.png", mergeIm, cmap='gray')
                     img.imsave("out/" + folderName +  "/" + detect + "/" + match + "/" + num2 + "to" + num + "Matches.png", matchIm, cmap='gray')
-                    error = computeError2(mergeImManual, mergeIm)
-                    f.write("\tMatching Algorithm - " + match + " - Error (SSIM): " + str(error) + "\n")
+
+                    for errorType in errorAlgs:
+                        # for loop going through errorAlgs for computing error 
+                        error = errorAlgs[errorType](mergeImManual, mergeIm)
+                        f.write("\t\tError Algorithm - " + errorType + ": " + str(error) + "\n")
                 else:
-                    f.write("\tMatching Algorithm - " + match + " - Error Occured during Warp!")
+                    f.write("\tMatching Algorithm - " + match + " - Error Occured during Warp!\n")
                     print('Warping bug occured')
         f.close()

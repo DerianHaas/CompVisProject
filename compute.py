@@ -1,25 +1,49 @@
 import numpy as np
 from skimage.measure import compare_ssim
+import cv2
 
 
 def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
 
-def computeError(image1: np.ndarray, image2: np.ndarray):
+# sum of pixel by pixel difference between both images
+def computeBFerror(image1: np.ndarray, image2: np.ndarray):
     im1 = rgb2gray(image1)
     im2 = rgb2gray(image2)
     im2.resize(im1.shape)
     im1 = normalize(im1)
     im2 = normalize(im2)
     return np.sum(abs(im1-im2))
-
-def computeError2(image1: np.ndarray, image2: np.ndarray):
+# Structural Similarity Index
+def computeSSIMerror(image1: np.ndarray, image2: np.ndarray):
     im1 = rgb2gray(image1)
     im2 = rgb2gray(image2)
     im2.resize(im1.shape)
     im1 = normalize(im1)
     im2 = normalize(im2)
     return compare_ssim(im1, im2)
+# calculate Histograms of both image, and use Chi-Square to compare distance between both histograms
+def computeHISTerror(image1: np.ndarray, image2: np.ndarray):
+    im1 = rgb2gray(image1)
+    im2 = rgb2gray(image2)
+    #im2.resize(im1.shape)
+    im1 = normalize(im1)
+    im2 = normalize(im2)
+    im1 = np.float32(im1)
+    im2 = np.float32(im2)
+    hist1 = cv2.calcHist([im1], [0], None, [25], [0,256])
+    hist2 = cv2.calcHist([im2], [0], None, [25], [0,256])
+    error = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CHISQR)
+    return error
+# Root Mean Square Error 
+def computeRMSEerror(image1: np.ndarray, image2: np.ndarray):
+    im1 = rgb2gray(image1)
+    im2 = rgb2gray(image2)
+    im2.resize(im1.shape)
+    im1 = normalize(im1)
+    im2 = normalize(im2)
+    return np.sqrt(((im1 - im2) ** 2).mean())
+
 
 def computeH(t1: np.ndarray, t2: np.ndarray) -> np.ndarray:
     numPoints = t1.shape[1]
