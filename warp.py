@@ -15,10 +15,9 @@ def warpImage(inputIm: np.ndarray, refIm: np.ndarray, H: np.ndarray):
     maxCols = int(ceil(max(bounds[:,0])))
     maxRows = int(ceil(max(bounds[:,1])))
 
-
-    warpImg = np.zeros((maxRows - minRows, maxCols - minCols), dtype='float')
     if maxRows - minRows > 5000 or maxCols-minCols > 5000:
-        return warpImg, warpImg
+        return 'error', 'error'
+    warpImg = np.zeros((maxRows - minRows, maxCols - minCols), dtype='float')
     invH = np.linalg.inv(H)
     for r in range(0, maxRows - minRows):
         for c in range(0, maxCols - minCols):

@@ -4,6 +4,9 @@ from matchFeatures import *
 import os
 import cv2
 
+detectAlgs = {'ORB': detectORB, 'BRISK': detectBRISK, 'AKAZE': detectAKAZE}
+matchAlgs = {'brute': matchBruteForce, 'bruteKnn': matchBFKnn, 'flann': matchFlannKnn}
+
 
 def load(folderName: str, numPics: int, numMatches: int):
     images = []
@@ -22,25 +25,41 @@ def load(folderName: str, numPics: int, numMatches: int):
     Hmatrices = np.array(Hmatrices[::-1])
     if not os.path.exists("out/" + folderName):
         os.mkdir("out/" + folderName)
+    if not os.path.exists("out/" + folderName + "/Error"):
+        os.mkdir("out/" + folderName + "/Error")
+    if not os.path.exists("out/" + folderName + "/Manual"):
+        os.mkdir("out/" + folderName + "/Manual")
+    for detect in detectAlgs:
+        if not os.path.exists("out/" + folderName + "/" + detect):
+            os.mkdir("out/" + folderName + "/" + detect)
+        for match in matchAlgs:
+            if not os.path.exists("out/" + folderName +  "/" + detect + "/" + match):
+                os.mkdir("out/" + folderName +  "/" + detect + "/" + match)
+
     for i in range(len(Hmatrices) - 1, -1, -1):
         num = ("0" if i < 10 else "") + str(i)
         num2 = ("0" if i < 9 else "") + str(i + 1)
 
-        warpIm, mergeIm = warpImage(images[i + 1], images[i], Hmatrices[i])
-        img.imsave("out/" + folderName + "/manual" + num2 + "to" + num + "Merge.png", mergeIm, cmap='gray')
+        print("Matching images "+str(num2)+" to "+str(num)+" in dataset "+folderName+" with given homography")
 
-        points1, points2, matchIm = matchBruteForce(images[i + 1], images[i], numMatches)
-        _, mergeBrute = warpImage(images[i + 1], images[i], computeH(points1, points2))
-        img.imsave("out/" + folderName + "/brute" + num2 + "to" + num + "Merge.png", mergeIm, cmap='gray')
-        img.imsave("out/" + folderName + "/brute" + num2 + "to" + num + "Matches.png", matchIm, cmap='gray')
+        _, mergeImManual = warpImage(images[i + 1], images[i], Hmatrices[i])
+        img.imsave("out/" + folderName + "/Manual/" + num2 + "to" + num + "Merge.png", mergeImManual, cmap='gray')
 
-        points1, points2, matchIm = matchKnn(images[i + 1], images[i], numMatches)
-        _, mergeKnn = warpImage(images[i + 1], images[i], computeH(points1, points2))
-        img.imsave("out/" + folderName + "/knn" + num2 + "to" + num + "Merge.png", mergeIm, cmap='gray')
-        img.imsave("out/" + folderName + "/knn" + num2 + "to" + num + "Matches.png", matchIm, cmap='gray')
+        f = open("out/" + folderName + "/Error/" + num2 + "to" + num + ".txt", "w+")
 
-        bruteError = computeError2(mergeIm, mergeBrute)
-        knnError = computeError2(mergeIm, mergeKnn)
-        f = open("out/" + folderName + "/" + num2 + "to" + num + "Error.txt", "w+")
-        f.write("Brute force error (SSIM): " + str(bruteError) + "\n" + "Knn error (SSIM): " + str(knnError))
+        for detect in detectAlgs:
+            keyPoints, descriptors = detectAlgs[detect](images[i + 1], images[i])
+            f.write("Detection Algorithm: " + detect + "\n")
+            for match in matchAlgs:
+                print("Matching images "+str(num2)+" to "+str(num)+" in dataset "+folderName+" with "+detect+" detection and "+match+" matching")
+                points1, points2, matchIm = matchAlgs[match](images[i + 1], images[i], keyPoints, descriptors, numMatches)
+                _, mergeIm = warpImage(images[i + 1], images[i], computeH(points1, points2))
+                if type(mergeIm) != str:
+                    img.imsave("out/" + folderName +  "/" + detect + "/" + match + "/" + num2 + "to" + num + "Merge.png", mergeIm, cmap='gray')
+                    img.imsave("out/" + folderName +  "/" + detect + "/" + match + "/" + num2 + "to" + num + "Matches.png", matchIm, cmap='gray')
+                    error = computeError2(mergeImManual, mergeIm)
+                    f.write("\tMatching Algorithm - " + match + " - Error (SSIM): " + str(error) + "\n")
+                else:
+                    f.write("\tMatching Algorithm - " + match + " - Error Occured during Warp!")
+                    print('Warping bug occured')
         f.close()
