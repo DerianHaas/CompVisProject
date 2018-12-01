@@ -12,17 +12,13 @@
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="stylesheet" href="styles.css">
-
-    <!-- HTML5 shim, for IE6-8 support of HTML5 elements --><!--[if lt IE 9]>
-    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
   </head>
 
   <body>
     <div class="container">
       <div class="page-header">
         <!-- Title and Name -->
-        <h1>Performance of Feature Detection Algorithms on Image Stitching</h1>
+        <h2>Performance of Feature Detection and Matching Algorithms on Image Stitching</h2>
         <span class="font-primary">
           <p>
             Haas, Derian<br />
@@ -31,20 +27,14 @@
           </p>
         </span>
         <div class="font-secondary">Fall 2018 CS4476 Computer Vision: Class Project</div><br />
-        <div class="font-secondary">Georgia Tech</div>
+        <div class="font-secondary">Georgia Tech</div><br>
+        <div class="font-secondary">Github: <a href="https://github.com/DerianHaas/CompVisProject">https://github.com/DerianHaas/CompVisProject</a></div>
         <hr />
 
         <!-- Goal -->
         <h3>Abstract</h3>
         <p>
-          We are doing a comparative study on different feature selection algorithms on images from
-          different angles and using their respective homography matrix, warped points, and panorama
-          to demonstrate their effects. The idea is to use the selected features, match them between
-          images, and create a warped, overlaid merging of the images. With manually computed
-          homographies provided in the datasets as our ground truth, we want to do a qualitative
-          comparison between different feature selection algorithms on how successful they are at
-          imitating the ground truth stitching. After experimentation, we have found that no
-          specific feature selection algorithm provides superior results in a majority of instances.
+          We are doing a comparative study on different feature selection and feature matching algorithms on images of a particular scene taken from different angles and using their respective homography matrices, warped points, and panoramas to demonstrate their effects and performance. The idea is to use the selected features, match them between images, and create a warped, overlaid merging of the images. Our experiment deals with using manually computed homography matrices provided in the datasets as our ground truth to do a comparison between different feature selection algorithms and feature matching algorithms on how successful they are at imitating the ground truth stitching.After experimentation, we found that AKAZE performed best amongst the feature detection algorithms and k-NN performed best amongst the feature matching algorithms.
         </p>
 
         <!-- figure -->
@@ -58,61 +48,118 @@
         <!-- Introduction -->
         <h3>Introduction</h3>
         <p>
-          The inspiration for this project was a combination of assignment PS1 (creating an image
-          stitcher using image warping and homographies to automatically create an image mosaic) and
-          modern photography techniques on panoramic images. These two ideas led us to wondering
-          about the variety of computer vision techniques involved with all aspects of modern day
-          photography and how they actually function. As such, we have decided to try to recreate
-          existing panoramic photo stitchers and analyze how automatic feature selection and
-          matching has an effect on its angle warping and pixel stitching in comparison to the
-          provided datasets which we consider ground truth aka difference between images using a
-          calculated homography matrix and a provided homography matrix we know is exactly correct.
-          While this approach may not be new, we hope to learn which feature algorithms may be most
-          optimal in reproducing results similar to existing real world applications.
+          The inspiration for this project was a combination of assignment PS1 (creating an image stitcher using image warping and homographies to automatically create an image mosaic) and modern photography techniques on panoramic images. These two ideas led us to wondering about the variety of computer vision techniques involved with all aspects of modern-day photography and how they actually function.
+          Contemporary feature detection algorithms with different types of categories to detect features on images are used in real world applications such as in object detection tasks. Recent advances in Computer Vision technologies have called for new approaches to these problems. Approaches to these problems often use feature detection algorithms to pre-process the images. Unlike existing approaches that analyzes performance of feature detection algorithms on object detection, our study computes the homography matrix and uses feature matching algorithms to create merged images from which we will compare to ground truth merges to evaluate which feature detection and matching algorithms perform most accurately. To be consistent in the feature matching algorithms, we will use feature detection algorithms that compare blobs with interest/key points, specifically ORB, BRISK, and AKAZE.          
         </p>
 
         <!-- Approach -->
         <h3>Approach</h3>
         <p>
-          The feature selection algorithms we analyzed are Brute Force and K-Nearest Neighbors.
-          Using a dataset containing a panoramic image broken up into overlapping segments, we
-          converted each image to grayscale and ran each feature matching algorithm (through the
-          OpenCV Python library) on each pair of overlapping images. For each algorithm, we chose
-          10 matches between each pair of images and computed the homography matrices between them.
-          Using the homography matrix, we then warped and merged them together. For each result, we
-          compared the calculated error between the algorithms’ result and the ground truth using
-          the structural similarity index (SSIM). The SSIM computes a float between -1 and 1 from
-          two images, where the closer the index is to 1, the more similar the images are. The SSIM
-          allows us to find a quantitative comparison between feature matching algorithms. An obstacle
-          we faced was that there are no ground truth homography matrices for stitching more than two
-          images together. Because of this, we decided to stitch images into pairs only and compute
-          SSIM individually.
+          The feature detection algorithms that we tested were ORB, BRISK, and AKAZE, using open-source implementations from OpenCV v3.  Each algorithm takes in a pair of images and calculates the key/interest points and feature descriptors for each image.  We then used a brute force feature matcher along with two different implementations of knn-based feature matching (also via opencv) to compute matching points on each image.  The brute force algorithm takes the top 20 matches sorted by distance, while the knn algorithms (brute-force and FLANN) use a knn matching with k=2 and use a ratio test to extract the best pairs, as described in <a href="https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf">https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf</a>.  These matching points were used to compute a homography matrix and merge the two images together using code from PS1.  For the resulting merged images, we compared how similar they were to the merged image created using the ground truth homography matrix included in the dataset by using several different scoring algorithms. 
         </p>
+        <p>
+          Our scoring algorithms were BF (brute force) , HIST (Chi-Square distance between Histograms), RMSE (Root Mean Square Error) and SSIM (Structural Similarity Index). We wanted a variety of scoring metrics to thoroughly analyze the differences between the combinations of detection and matching algorithms, and as such computed scores using a variety of approaches. Initially, we decided to compute our own metric using brute force comparisons. The score is calculated by converting the images to grayscale, resizing if they are no longer the same size after merges, normalizing each image, and then summing the difference between every pixel value. This means that the lower the score, the more similar the two images were. Adding upon the initial brute force method, we calculated the Chi-Square distance between histograms created from each image. This means that instead of calculating differences pixel by pixel, each pixel was added to a bucket in a corresponding histogram and used for comparison with each other. With the grayscale, normalized images, we calculated the histograms using OpenCV’s calcHist() function with 25 buckets on a value range from 0-255 and compared the two histograms using OpenCV’s compareHist function with Chi-Square distance equation found <a href="https://docs.opencv.org/2.4/doc/tutorials/imgproc/histograms/histogram_comparison/histogram_comparison.html">here</a>. We wanted to make the histogram comparison more generalized compared to the brute force algorithm while maintaining a certain amount of specificity. With some testing, we settled on a bucket size of 25 for our histogram evaluator. Next, after looking up common scoring algorithms to determine image similarity values, we decided on a calculation for Root Mean Square Error usually used to measure the difference between a model and estimators values. The process was to turn the images to grayscale, resize them, and normalize. Then, the error value is calculated by taking the square root of the mean value attained after squaring the difference between pixels. More information can be found on <a href="https://en.wikipedia.org/wiki/Root-mean-square_deviation">Wikipedia</a>. Lastly, we wanted to use one of the most common scoring indicator for image similarity and decided on SSIM as our final scoring algorithm. As with the previous algorithms, we turned the images to grayscale, resized, and normalized. Then, we used the skimage.measure compare_ssim() function for calculating similarity between images. The equation for SSIM calculations can be viewed on <a href="https://en.wikipedia.org/wiki/Structural_similarity">Wikipedia</a> as well.
+        </p>
+
 
         <!-- Results -->
         <h3>Experiments and results</h3>
         <p>
-          For the dataset, we used Adobe's Panorama Dataset. It consists of 10 panorama image sets,
-          together with precomputed local features for each image, and ground truth homographies
-          for each overlapping image pair. We applied brute-force feature and k-means matching to
-          find matching points, and computed homography matrices between the images. Using the
-          generated homographies, we stitched the images together using our code from PS1.  Using the
-          Structural Similarity Index, we calculated how different each algorithms’ produced results
-          was from the ground truth. For each algorithm, we decided to use only 10 pairs of points
-          between two images to compute the homography matrix. We needed at least 4 pairs of points
-          to compute the homography matrix and the more points used in computation, the greater the
-          impact of potential outliers on the accuracy of the homography matrix. We will experiment
-          with different numbers of points moving forward, to see how they affect the results. For
-          k-means matching, we set the k-value to 2 which will draw two match-lines for each keypoint.
-          Using k = 2 allow us to use the ratio test to extract the best pairs, as described
-          <a href="https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf">here</a>. We will also need to
-          analyze in the future how the performance of both feature matching algorithms change as we
-          vary the initial parameter values. Our results have been mixed and varied, leading us to
-          believe that neither feature matching algorithm always produces more accurate panoramic
-          images. As such, future work may include additional feature matching algorithms and additional
-          tweaks to algorithm parameters in hopes of more conclusive results.
+          For the dataset, we used Adobe's Panorama Dataset. It consists of 10 panorama image sets, together with precomputed local features for each image, and ground truth homographies for each overlapping image pair. We applied brute-force feature and k-means matching to find matching points, and computed homography matrices between the images. For each algorithm, we decided to use 20 matches between the two images to compute the homography matrix. We needed at least 4 pairs of points to compute the homography matrix, but the more points used in computation, the greater the impact of potential outliers on the accuracy of the homography matrix, so we settled on 20 after testing.
         </p>
+        <p>
+          In terms of quantitatively calculating the similarity between merged images against the ground truth merge, we used 4 different scoring algorithms: BF (brute force) , HIST (Chi-Square distance between Histograms), RMSE (Root Mean Square Error) and SSIM (Structural Similarity Index). For the BF, HIST, and RMSE algorithms, the similarity metric starts at 0 for perfect replication and gets increasingly larger as similarity between images diminishes. Meanwhile, the SSIM score ranges from -1 to 1, where the closer to 1 the value is, the more similar the images are. Using these calculated scores, a few trends can be derived from the data. 
+        </p>
+        <p>
+          Firstly, between all the matching algorithms, there initially does not appear to be much of a difference between each approach when merging images together. However, upon closer inspection, there is a slight advantage with the flann matching algorithm in comparison to both brute force and knn. Additionally, while brute force and knn may appear to have similar results, there still exists an increase in reliability when using knn against brute force across multiple datasets. As a result, either the flann or knn algorithm would be the most useful in image merging.
+        </p>
+        <p>
+          Next, between the detection algorithms, AKAZE is easily the strongest choice in merging images together. AKAZE has the lowest scores in terms of BF, HIST, and RMSE, and closest value to 1 within the SSIM metric. It surpasses both ORB and BRISK in all 4 algorithms and as such makes it the best candidate. Additionally, since ORB and BRISK are similar algorithms, it would make sense that their metrics are relatively close to each although the BRISK algorithm results in better scoring overall compared to ORB. 
+        </p>
+        <p>Thus, our analysis results show the combination of AKAZE feature detection with flann/knn feature matching would reproduce the best panorama of merged images.</p>
+        <br><br>
+        <h4>Computed similarity scoring between feature merges and ground truth on golden gate bridge images:</h4>
+        <div style="display:none">
+        <ul>
+          <li>Detection Algorithm: ORB</li>
+          <ul>
+            <li>Matching Algorithm: brute</li>
+            <ul>
+              <li>Error Algorithm - BF: 62128.27396208604</li>
+              <li>Error Algorithm - SSIM: 0.05020928480034453</li>
+              <li>Error Algorithm - HIST: 5005.137931034482</li>
+              <li>Error Algorithm - RMSE: 101.44108536492602</li>
+            </ul>
+            <li>Matching Algorithm: bruteKnn</li>
+            <ul>
+              <li>Error Algorithm - BF: 62128.27396208604</li>
+              <li>Error Algorithm - SSIM: 0.05020928480034453</li>
+              <li>Error Algorithm - HIST: 5005.137931034482</li>
+              <li>Error Algorithm - RMSE: 101.44108536492602</li>
+            </ul>
+            <li>Matching Algorithm: flann</li>
+            <ul>
+              <li>Error Algorithm - BF: 62307.52064709405</li>
+              <li>Error Algorithm - SSIM: 0.04916325970228382</li>
+              <li>Error Algorithm - HIST: 5003.172413793102</li>
+              <li>Error Algorithm - RMSE: 101.6072078391413</li>
+            </ul>
+          </ul>
 
+          <li>Detection Algorithm: BRISK</li>
+          <ul>
+            <li>Matching Algorithm: brute</li>
+            <ul>
+              <li>Error Algorithm - BF: 58044.73435188694</li>
+              <li>Error Algorithm - SSIM: 0.024179190025367468</li>
+              <li>Error Algorithm - HIST: 4195.239977600236</li>
+              <li>Error Algorithm - RMSE: 96.58963683397585</li>
+            </ul>
+            <li>Matching Algorithm: bruteKnn</li>
+            <ul>
+              <li>Error Algorithm - BF: 58044.73435188694</li>
+              <li>Error Algorithm - SSIM: 0.024179190025367468</li>
+              <li>Error Algorithm - HIST: 4195.239977600236</li>
+              <li>Error Algorithm - RMSE: 96.58963683397585</li>
+            </ul>
+            <li>Matching Algorithm: flann</li>
+            <ul>
+              <li>Error Algorithm - BF: 58044.73435188694</li>
+              <li>Error Algorithm - SSIM: 0.024179190025367468</li>
+              <li>Error Algorithm - HIST: 4195.239977600236</li>
+              <li>Error Algorithm - RMSE: 96.58963683397585</li>
+            </ul>
+          </ul>
+
+          <li>Detection Algorithm: AKAZE</li>
+          <ul>
+            <li>Matching Algorithm: brute</li>
+            <ul>
+              <li>Error Algorithm - BF: 34154.4423788632</li>
+              <li>Error Algorithm - SSIM: 0.10461883143359416</li>
+              <li>Error Algorithm - HIST: 0.367816091954023</li>
+              <li>Error Algorithm - RMSE: 69.0450433029057</li>
+            </ul>
+            <li>Matching Algorithm: bruteKnn</li>
+            <ul>
+              <li>Error Algorithm - BF: 34154.4423788632</li>
+              <li>Error Algorithm - SSIM: 0.10461883143359416</li>
+              <li>Error Algorithm - HIST: 0.367816091954023</li>
+              <li>Error Algorithm - RMSE: 69.0450433029057</li>
+            </ul>
+            <li>Matching Algorithm: flann</li>
+            <ul>
+              <li>Error Algorithm - BF: 34154.4423788632</li>
+              <li>Error Algorithm - SSIM: 0.10461883143359416</li>
+              <li>Error Algorithm - HIST: 0.367816091954023</li>
+              <li>Error Algorithm - RMSE: 69.0450433029057</li>
+            </ul>
+          </ul>
+        </ul>        
+        </div>
+        <div style="text-align: center;">
+          <img style="height: 600px;" alt="" src="images/table.png">
+      </div>
         <!-- Results -->
         <h3>Qualitative results</h3>
         <h5>
@@ -120,89 +167,69 @@
         </h5>
         <p>Input images to merge:</p>
         <div style="text-align: center;">
-            <img style="height: 400px;" alt="" src="images/goldengate-01.png">
-            <img style="height: 400px;" alt="" src="images/goldengate-00.png">
+            <img style="height: 400px;" alt="" src="images/goldengate-04.png">
+            <img style="height: 400px;" alt="" src="images/goldengate-03.png">
         </div>
-
-        <p>Feature matching (10 pairs of points), brute force on left, knn on right</p>
+        <br>
+        <p>Feature matching (20 matches):</p>
+        ORB: <button id="ORBbfmatch" onclick="document.getElementById('matchImg').src = 'images/ORB-brute-04to03Matches.png'">Brute Force Matching</button>
+             <button id="ORBknnmatch" onclick="document.getElementById('matchImg').src = 'images/ORB-bruteKnn-04to03Matches.png'">BF Knn Matching</button>
+             <button id="ORBflannmatch" onclick="document.getElementById('matchImg').src = 'images/ORB-flann-04to03Matches.png'">Flann Knn Matching</button><br>
+        BRISK: <button id="BRISKbfmatch" onclick="document.getElementById('matchImg').src = 'images/BRISK-brute-04to03Matches.png'">Brute Force Matching</button>
+               <button id="BRISKknnmatch" onclick="document.getElementById('matchImg').src = 'images/BRISK-bruteKnn-04to03Matches.png'">BF Knn Matching</button>
+               <button id="BRISKflannmatch" onclick="document.getElementById('matchImg').src = 'images/BRISK-flann-04to03Matches.png'">Flann Knn Matching</button><br>
+        AKAZE: <button id="AKAZEbfmatch" onclick="document.getElementById('matchImg').src = 'images/AKAZE-brute-04to03Matches.png'">Brute Force Matching</button>
+               <button id="AKAZEknnmatch" onclick="document.getElementById('matchImg').src = 'images/AKAZE-bruteKnn-04to03Matches.png'">BF Knn Matching</button>
+               <button id="AKAZEflannmatch" onclick="document.getElementById('matchImg').src = 'images/AKAZE-flann-04to03Matches.png'">Flann Knn Matching</button><br>
         <div style="text-align: center;">
-            <img style="height: 300px;" alt="" src="images/GGbrute1to0Matches.png">
-            <img style="height: 300px;" alt="" src="images/GGknn1to0Matches.png">
+            <img id="matchImg" style="height: 600px;" alt="" src="">
         </div>
-
+        <br>
         <p>Merged images using homography matrix included in dataset (ground truth):</p>
         <div style="text-align: center;">
-          <img style="height: 400px;" alt="" src="images/GGmanual1to0Merge.png">
+          <img style="height: 600px;" alt="" src="images/manual4to3Merge.png">
         </div>
-
+        <br>
         <p>
-          Merged images using homography computed from feature matching (left: brute force, right: knn)
+          Merged images using homography computed from feature matching (Note - Images on same row many be extremely similar):
         </p>
+        ORB: <button id="ORBbfmerge" onclick="document.getElementById('mergeImg').src = 'images/ORB-brute-04to03Merge.png'">Brute Force Merge</button>
+             <button id="ORBknnmerge" onclick="document.getElementById('mergeImg').src = 'images/ORB-bruteKnn-04to03Merge.png'">BF Knn Merge</button>
+             <button id="ORBflannmerge" onclick="document.getElementById('mergeImg').src = 'images/ORB-flann-04to03Merge.png'">Flann Knn Merge</button><br>
+        BRISK: <button id="BRISKbfmerge" onclick="document.getElementById('mergeImg').src = 'images/BRISK-brute-04to03Merge.png'">Brute Force Merge</button>
+               <button id="BRISKknnmerge" onclick="document.getElementById('mergeImg').src = 'images/BRISK-bruteKnn-04to03Merge.png'">BF Knn Merge</button>
+               <button id="BRISKflannmerge" onclick="document.getElementById('mergeImg').src = 'images/BRISK-flann-04to03Merge.png'">Flann Knn Merge</button><br>
+        AKAZE: <button id="AKAZEbfmerge" onclick="document.getElementById('mergeImg').src = 'images/AKAZE-brute-04to03Merge.png'">Brute Force Merge</button>
+               <button id="AKAZEknnmerge" onclick="document.getElementById('mergeImg').src = 'images/AKAZE-bruteKnn-04to03Merge.png'">BF Knn Merge</button>
+               <button id="AKAZEflannmerge" onclick="document.getElementById('mergeImg').src = 'images/AKAZE-flann-04to03Merge.png'">Flann Knn Merge</button><br>
         <div style="text-align: center;">
-            <img style="height: 400px;" alt="" src="images/GGbrute1to0Merge.png">
-            <img style="height: 400px;" alt="" src="images/GGknn1to0Merge.png">
+            <img id="mergeImg" style="height: 600px;" alt="" src="">
         </div>
-        <br/>
-        <p>Computed similarity between calculated merges and ground truth using SSIM: <br/><br/>
-            Brute force vs Ground truth: 0.8873626380952582 <br />
-            Knn vs Ground truth: 0.7725209975282192
-        </p>
+        <br><br><br>
 
-        <h5>
-            Example feature matching on office:
-          </h5>
-          <p>Input images to merge:</p>
-          <div style="text-align: center;">
-              <img style="height: 400px;" alt="" src="images/office-01.png">
-              <img style="height: 400px;" alt="" src="images/office-00.png">
-          </div>
-
-          <p>Feature matching (10 pairs of points), brute force on left, knn on right</p>
-          <div style="text-align: center;">
-              <img style="height: 300px;" alt="" src="images/officebrute1to0Matches.png">
-              <img style="height: 300px;" alt="" src="images/officeknn1to0Matches.png">
-          </div>
-
-          <p>Merged images using homography matrix included in dataset (ground truth):</p>
-          <div style="text-align: center;">
-            <img style="height: 400px;" alt="" src="images/officemanual1to0Merge.png">
-          </div>
-
-          <p>
-            Merged images using homography computed from feature matching (left: brute force, right: knn)
-          </p>
-          <div style="text-align: center;">
-              <img style="height: 400px;" alt="" src="images/officebrute1to0Merge.png">
-              <img style="height: 400px;" alt="" src="images/officeknn1to0Merge.png">
-          </div>
-          <br/>
-          <p>Computed similarity between calculated merges and ground truth using SSIM: <br/><br/>
-              Brute force vs Ground truth: 0.9462665043983813 <br />
-              Knn vs Ground truth: 0.962649793084795
-          </p>
-
+       
         <h3>Conclusion and Future Work</h3>
-        <p>
-          In our project proposal, we planned to measure how changing the order of image stitching
-          affects the quality of the panorama produced. However, since we do not have ground truth
-          homography matrices for stitching more than two images together, we cannot test different
-          orderings.  Instead, we are computing similarity between pairs of images stitched together
-          using different feature matching algorithms. Our future work includes experimenting with
-          the number of pairs of points to use to compute the homography matrix. We will also need
-          to analyze how the performance of both feature matching algorithms change as we vary the
-          initial parameter values. Finally, we plan to add more feature matching algorithms for
-          qualitative comparison.
+        <p>Based on our mid-term update on future work, we added more feature-matching algorithms and datasets to compare the performance of image stitching on image datasets of different scenes. Also, we have created all combinations of feature matching and feature detection algorithms to analyze which feature detection algorithm and feature matching algorithm performed most optimally. We have also introduced other scoring algorithms to thoroughly analyze which algorithms perform statistically better than the others.
         </p>
-
+        <p>
+          Through comparisons of panoramas created from different feature detection and feature matching algorithms with the ground truth panoramas created from the homography matrices, we have concluded that AKAZE performed the most accurately amongst the feature detection algorithms and FLANN performed best amongst the feature matching algorithms.
+        </p>
+        <p>
+          Future work possibilities include adding other feature detection algorithms such as edge-based (Canny) or corner-based (Harris). Also, other methods to compute similarity between panoramas can be introduced to compare evaluation metrics. One possible idea is to compute feature detection algorithms on the panoramas produced and the ground-truth panoramas and finding the euclidean distance between the points. From this, the panoramas with the lowest mean value of the distances would be considered more accurate. Future work also includes experimenting with number of pairs of points to use to compute the homography matrix. We needed at least four pairs of points to compute the homography matrix but found that the more pairs of points used, the more likely there were risks of outliers in points that affect the accuracy of the homography matrix. We decided to use twenty pairs of points but a more thorough investigation on the optimal number of pairs of points to use can be done.
+        </p>
+        <br><br>
         <h3>References</h3>
         <ul>
           <li>
             Feature Matching. Retrieved October 31, 2018, from
-            https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_matcher/py_matcher.html
+            <a href="https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_matcher/py_matcher.html">https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_matcher/py_matcher.html</a>
           </li>
+          <li>Histogram Comparison. Retrieved November 30, 2018, from <a href="https://docs.opencv.org/2.4/doc/tutorials/imgproc/histograms/histogram_comparison/histogram_comparison.html">https://docs.opencv.org/2.4/doc/tutorials/imgproc/histograms/histogram_comparison/histogram_comparison.html</a></li>
           <li>
             Lowe, D. G. (2004). Distinctive Image Features from Scale-Invariant Keypoints.
             International Journal of Computer Vision, 60(2), 91-110. doi:10.1023/b:visi.0000029664.99615.94
+          </li>
+          <li>Salahat, E., & Qasaimeh, M. (2017). Recent advances in features extraction and description algorithms: A comprehensive survey. 2017 IEEE International Conference on Industrial Technology (ICIT). doi:10.1109/icit.2017.7915508
           </li>
         </ul>
         <hr />

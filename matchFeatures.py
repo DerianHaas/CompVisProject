@@ -21,7 +21,6 @@ def detectAKAZE(img1, img2):
     return (kp1, kp2), (des1, des2)
 
 
-
 def matchBruteForce(img1, img2, keyPoints, descriptors, numMatches: int, showMatches: bool = False):
     # create BFMatcher object
     bf = cv2.BFMatcher(cv2.NORM_HAMMING)
